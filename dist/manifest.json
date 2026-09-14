@@ -1,0 +1,16 @@
+{
+  "short_name": "Inspección Matrix",
+  "name": "Inspección Técnica de Nodos - Corporación Matrix TV, C.A.",
+  "icons": [
+    {
+      "src": "/airtek-logo.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#ffffff",
+  "theme_color": "#0166FF",
+  "display": "standalone",
+  "orientation": "portrait"
+}
