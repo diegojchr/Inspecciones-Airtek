@@ -831,6 +831,7 @@ textarea {
 .final-badge-box.apto { background: var(--success-light); color: #008000; border: 2px solid var(--success); }
 .final-badge-box.adecuaciones { background: var(--warning-light); color: #d95300; border: 2px solid var(--warning); }
 .final-badge-box.no-apto { background: var(--danger-light); color: #d32f2f; border: 2px solid var(--danger); }
+.final-badge-box.pendiente { background: #f1f5f9; color: #64748b; border: 2px dashed #cbd5e1; }
 
 .animate-fade { animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
@@ -1016,6 +1017,12 @@ textarea {
     background-color: #fee2e2 !important;
     color: #b91c1c !important;
     border: 1.5px solid #ef4444 !important;
+  }
+
+  .print-dictamen-badge.pendiente {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1.5px dashed #cbd5e1 !important;
   }
 
   /* Anexos Fotográficos */

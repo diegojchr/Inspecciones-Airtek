@@ -3,7 +3,7 @@ import {
   Camera, Save, Zap, WifiOff, MapPin, Activity, 
   Printer, ShieldAlert, Home, FileText, CheckCircle2, 
   ChevronRight, ChevronLeft, Eye, LayoutList, Trash2, Plus, Image as ImageIcon,
-  AlertTriangle, XCircle, FileCheck
+  AlertTriangle, XCircle, FileCheck, RotateCcw
 } from 'lucide-react';
 import localforage from 'localforage';
 import './index.css';
@@ -27,68 +27,75 @@ const DEFAULT_PHOTO_CATEGORIES = [
   'Otras Evidencias Técnicas'
 ];
 
+const INITIAL_FORM_DATA = {
+  proposalTitle: '',
+  inspectorName: '',
+  date: new Date().toISOString().split('T')[0],
+  nodeId: '',
+  address: '',
+  mapsUrl: '',
+
+  // 1. Servicio Eléctrico & Acometida
+  serviceStatus: '',
+  hasMeter: null,
+  acometidaCondition: '',
+  wireGauge: '',
+  dualCircuitNeeded: null,
+  loadShedding: '',
+
+  // 2. Transformador
+  transformerCondition: '',
+  transformerType: '',
+  transformerCapacity: '',
+  transformerDistance: '',
+  transformerVoltage: '',
+  phaseType: '',
+  isShared: null,
+  subscriberCount: '',
+  ubt: '',
+  hasLightningRod: null,
+  hasAntiFraud: null,
+  transformerNotes: '',
+
+  // 3. Tableros e Infraestructura
+  panelCount: '',
+  panelTypes: '',
+  circuitsPerPanel: '',
+  mainPanelCondition: '',
+  totalCircuits: '',
+  circuitsCondition: null,
+  conduitsCondition: null,
+  conductorsCondition: null,
+  outletsCondition: null,
+  outlets110Count: '',
+  outlets220Count: '',
+
+  // 4. Vivienda y Respaldo
+  wallType: '',
+  hasFriso: null,
+  roofType: '',
+  spaceForGenerator: null,
+  generatorNotes: '',
+  spaceForSolar: null,
+  solarNotes: '',
+  housingNotes: '',
+
+  // 5. Dictamen
+  finalStatus: '',
+};
+
+function renderBoolVal(val, yesText = 'SÍ', noText = 'NO') {
+  if (val === true) return yesText;
+  if (val === false) return noText;
+  return 'N/A';
+}
+
 function App() {
   const [currentStep, setCurrentStep] = useState(1);
   const [activeTab, setActiveTab] = useState('form');
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
-  const [formData, setFormData] = useState({
-    proposalTitle: 'PROPUESTA DE RESPALDO',
-    inspectorName: '',
-    date: new Date().toISOString().split('T')[0],
-    nodeId: '',
-    address: '',
-    mapsUrl: '',
-
-    // 1. Servicio Eléctrico & Acometida
-    serviceStatus: 'optimo',
-    hasMeter: false,
-    acometidaCondition: 'Buenas',
-    wireGauge: '',
-    dualCircuitNeeded: false,
-    loadShedding: '',
-
-    // 2. Transformador
-    transformerCondition: 'Óptimo',
-    transformerType: 'Poste',
-    transformerCapacity: '',
-    transformerDistance: '',
-    transformerVoltage: '',
-    phaseType: 'Monofasico',
-    isShared: false,
-    subscriberCount: '',
-    ubt: '',
-    hasLightningRod: false,
-    hasAntiFraud: false,
-    transformerNotes: '',
-
-    // 3. Tableros e Infraestructura
-    panelCount: '',
-    panelTypes: '',
-    circuitsPerPanel: '',
-    mainPanelCondition: 'Buenas',
-    totalCircuits: '',
-    circuitsCondition: false,
-    conduitsCondition: false,
-    conductorsCondition: false,
-    outletsCondition: false,
-    outlets110Count: '',
-    outlets220Count: '',
-
-    // 4. Vivienda y Respaldo
-    wallType: 'Bloque de cámara',
-    hasFriso: false,
-    roofType: '',
-    spaceForGenerator: false,
-    generatorNotes: '',
-    spaceForSolar: false,
-    solarNotes: '',
-    housingNotes: '',
-
-    // 5. Dictamen
-    finalStatus: 'APTO',
-  });
-
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [photos, setPhotos] = useState({});
 
   useEffect(() => {
@@ -128,9 +135,28 @@ function App() {
   };
 
   const toggleCheck = (field) => {
-    const newFormData = { ...formData, [field]: !formData[field] };
+    const currentValue = formData[field];
+    let nextValue;
+    if (currentValue === null || currentValue === undefined) {
+      nextValue = true;
+    } else if (currentValue === true) {
+      nextValue = false;
+    } else {
+      nextValue = null;
+    }
+    const newFormData = { ...formData, [field]: nextValue };
     setFormData(newFormData);
     localforage.setItem('airtek_energia_form_clean', newFormData);
+  };
+
+  const handleResetForm = () => {
+    if (window.confirm('¿Desea iniciar una nueva inspección? Se limpiarán los datos del formulario.')) {
+      setFormData(INITIAL_FORM_DATA);
+      setPhotos({});
+      localforage.removeItem('airtek_energia_form_clean');
+      localforage.removeItem('airtek_energia_photos_clean');
+      setCurrentStep(1);
+    }
   };
 
   const handlePhotoUpload = (category, files) => {
@@ -197,7 +223,7 @@ function App() {
             </div>
             <div className="header-text">
               <h1>Inspección Técnica de Nodos</h1>
-              <p className="subtitle">GERENCIA OPERATIVA DE ENERGÍA</p>
+              <p className="subtitle">CORPORACIÓN MATRIX TV, C.A.</p>
             </div>
           </div>
 
@@ -213,6 +239,14 @@ function App() {
               onClick={() => setActiveTab('preview')}
             >
               <Eye size={16} /> Vista Previa Ficha Técnica
+            </button>
+            <button 
+              className="view-btn reset-btn"
+              onClick={handleResetForm}
+              title="Limpiar formulario para nueva inspección"
+              style={{ background: '#f1f5f9', color: '#64748b', border: '1px solid #cbd5e1' }}
+            >
+              <RotateCcw size={16} /> Nueva Inspección
             </button>
           </div>
         </header>
@@ -268,24 +302,29 @@ function App() {
 
                   <div className="grid-2">
                     <div className="form-group">
-                      <label>Título / Identificador del Nodo *</label>
-                      <input type="text" name="nodeId" value={formData.nodeId} onChange={handleChange} placeholder="Ej: NODO-AIRTEK" required />
+                      <label>Título / Propuesta de Respaldo</label>
+                      <input type="text" name="proposalTitle" value={formData.proposalTitle} onChange={handleChange} placeholder="Ej: PROPUESTA DE RESPALDO NODO MATRIX" />
                     </div>
                     <div className="form-group">
-                      <label>Inspector Responsable *</label>
-                      <input type="text" name="inspectorName" value={formData.inspectorName} onChange={handleChange} placeholder="Nombre y Apellido del Técnico" required />
+                      <label>Identificador del Nodo *</label>
+                      <input type="text" name="nodeId" value={formData.nodeId} onChange={handleChange} placeholder="Ej: NODO-MATRIX-01" required />
                     </div>
                   </div>
 
                   <div className="grid-2">
                     <div className="form-group">
+                      <label>Inspector Responsable *</label>
+                      <input type="text" name="inspectorName" value={formData.inspectorName} onChange={handleChange} placeholder="Nombre y Apellido del Técnico" required />
+                    </div>
+                    <div className="form-group">
                       <label>Fecha de Inspección *</label>
                       <input type="date" name="date" value={formData.date} onChange={handleChange} required />
                     </div>
-                    <div className="form-group">
-                      <label>Enlace Google Maps / Coordenadas</label>
-                      <input type="text" name="mapsUrl" value={formData.mapsUrl} onChange={handleChange} placeholder="Ej: https://maps.google.com/..." />
-                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label>Enlace Google Maps / Coordenadas</label>
+                    <input type="text" name="mapsUrl" value={formData.mapsUrl} onChange={handleChange} placeholder="Ej: https://maps.google.com/..." />
                   </div>
 
                   <div className="form-group">
@@ -319,6 +358,7 @@ function App() {
                     <div className="form-group">
                       <label>Condición de la Acometida</label>
                       <select name="acometidaCondition" value={formData.acometidaCondition} onChange={handleChange}>
+                        <option value="">-- Seleccionar --</option>
                         <option value="Buenas">Buenas Condiciones</option>
                         <option value="Regular">Requiere Adecuación</option>
                         <option value="Crítico">Deteriorado / Reemplazar</option>
@@ -336,14 +376,24 @@ function App() {
                   </div>
 
                   <div className="toggles-grid">
-                    <div className={`custom-toggle-card ${formData.hasMeter ? 'active' : ''}`} onClick={() => toggleCheck('hasMeter')}>
+                    <div 
+                      className={`custom-toggle-card ${formData.hasMeter === true ? 'active' : formData.hasMeter === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('hasMeter')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Medidor Eléctrico Presente</span>
+                      <span className="toggle-label">
+                        Medidor Eléctrico: <strong>{renderBoolVal(formData.hasMeter, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
 
-                    <div className={`custom-toggle-card ${formData.dualCircuitNeeded ? 'active' : ''}`} onClick={() => toggleCheck('dualCircuitNeeded')}>
+                    <div 
+                      className={`custom-toggle-card ${formData.dualCircuitNeeded === true ? 'active' : formData.dualCircuitNeeded === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('dualCircuitNeeded')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Amerita Alimentación Doble Circuito</span>
+                      <span className="toggle-label">
+                        Alimentación Doble Circuito: <strong>{renderBoolVal(formData.dualCircuitNeeded, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -360,15 +410,28 @@ function App() {
                     </div>
                   </div>
 
-                  <div className="grid-3">
+                  <div className="grid-2">
                     <div className="form-group">
                       <label>Tipo de Transformador</label>
                       <select name="transformerType" value={formData.transformerType} onChange={handleChange}>
+                        <option value="">-- Seleccionar --</option>
                         <option value="Poste">En Poste</option>
                         <option value="Pedestal">En Pedestal (Pad-Mounted)</option>
                         <option value="Subterráneo">Subterráneo / Caseta</option>
                       </select>
                     </div>
+                    <div className="form-group">
+                      <label>Condición Operativa del Transformador</label>
+                      <select name="transformerCondition" value={formData.transformerCondition} onChange={handleChange}>
+                        <option value="">-- Seleccionar --</option>
+                        <option value="Óptimo">Óptimo</option>
+                        <option value="Regular">Regular</option>
+                        <option value="Deteriorado">Deteriorado / Reemplazar</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid-3">
                     <div className="form-group">
                       <label>Capacidad (KVA)</label>
                       <input type="text" name="transformerCapacity" value={formData.transformerCapacity} onChange={handleChange} placeholder="Ej: 37.5, 50, 75 KVA" />
@@ -377,16 +440,17 @@ function App() {
                       <label>Voltaje Medido (V)</label>
                       <input type="text" name="transformerVoltage" value={formData.transformerVoltage} onChange={handleChange} placeholder="Ej: 110/220V" />
                     </div>
-                  </div>
-
-                  <div className="grid-3">
                     <div className="form-group">
                       <label>Sistema / Fases</label>
                       <select name="phaseType" value={formData.phaseType} onChange={handleChange}>
+                        <option value="">-- Seleccionar --</option>
                         <option value="Monofasico">Monofásico</option>
                         <option value="Trifasico">Trifásico</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div className="grid-2">
                     <div className="form-group">
                       <label>Distancia al Inmueble (m)</label>
                       <input type="text" name="transformerDistance" value={formData.transformerDistance} onChange={handleChange} placeholder="Ej: 15m" />
@@ -398,21 +462,38 @@ function App() {
                   </div>
 
                   <div className="toggles-grid">
-                    <div className={`custom-toggle-card ${formData.isShared ? 'active' : ''}`} onClick={() => toggleCheck('isShared')}>
+                    <div 
+                      className={`custom-toggle-card ${formData.isShared === true ? 'active' : formData.isShared === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('isShared')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Transformador Compartido</span>
+                      <span className="toggle-label">
+                        Transformador Compartido: <strong>{renderBoolVal(formData.isShared, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
-                    <div className={`custom-toggle-card ${formData.hasLightningRod ? 'active' : ''}`} onClick={() => toggleCheck('hasLightningRod')}>
+
+                    <div 
+                      className={`custom-toggle-card ${formData.hasLightningRod === true ? 'active' : formData.hasLightningRod === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('hasLightningRod')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Cuenta con Pararrayo</span>
+                      <span className="toggle-label">
+                        Pararrayos: <strong>{renderBoolVal(formData.hasLightningRod, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
-                    <div className={`custom-toggle-card ${formData.hasAntiFraud ? 'active' : ''}`} onClick={() => toggleCheck('hasAntiFraud')}>
+
+                    <div 
+                      className={`custom-toggle-card ${formData.hasAntiFraud === true ? 'active' : formData.hasAntiFraud === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('hasAntiFraud')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Sistema Antifraude Presente</span>
+                      <span className="toggle-label">
+                        Sistema Antifraude: <strong>{renderBoolVal(formData.hasAntiFraud, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
                   </div>
 
-                  {formData.isShared && (
+                  {formData.isShared === true && (
                     <div className="form-group" style={{marginTop: '1rem'}}>
                       <label>Cantidad Estimada de Suscriptores</label>
                       <input type="text" name="subscriberCount" value={formData.subscriberCount} onChange={handleChange} placeholder="Ej: 8 usuarios" />
@@ -443,8 +524,20 @@ function App() {
                       <input type="number" name="panelCount" value={formData.panelCount} onChange={handleChange} placeholder="Ej: 1, 2, 3..." />
                     </div>
                     <div className="form-group">
+                      <label>Total de Circuitos / Breakers</label>
+                      <input type="number" name="totalCircuits" value={formData.totalCircuits} onChange={handleChange} placeholder="Ej: 8, 12, 16..." />
+                    </div>
+                  </div>
+
+                  <div className="grid-2">
+                    <div className="form-group">
+                      <label>Tipo de Tablero(s)</label>
+                      <input type="text" name="panelTypes" value={formData.panelTypes} onChange={handleChange} placeholder="Ej: Empotrado (Metal) / Superficial" />
+                    </div>
+                    <div className="form-group">
                       <label>Condición General de Tableros</label>
                       <select name="mainPanelCondition" value={formData.mainPanelCondition} onChange={handleChange}>
+                        <option value="">-- Seleccionar --</option>
                         <option value="Buenas">En Buenas Condiciones</option>
                         <option value="Requiere Mantenimiento">Requiere Mantenimiento</option>
                         <option value="Obsoleto/Reemplazar">Obsoleto / Reemplazar</option>
@@ -453,31 +546,49 @@ function App() {
                   </div>
 
                   <div className="form-group">
-                    <label>Tipo de Tablero(s)</label>
-                    <input type="text" name="panelTypes" value={formData.panelTypes} onChange={handleChange} placeholder="Ej: Tablero Principal: Empotrado (Metal) | Tablero 2: Superficial" />
-                  </div>
-
-                  <div className="form-group">
                     <label>Desglose de Circuitos por Tablero</label>
-                    <textarea name="circuitsPerPanel" value={formData.circuitsPerPanel} onChange={handleChange} placeholder="Ej: Tablero 1: 8 circuitos (Breakers 20A) | Tablero 2: 4 circuitos (Breakers 40A)"></textarea>
+                    <textarea name="circuitsPerPanel" value={formData.circuitsPerPanel} onChange={handleChange} placeholder="Ej: Tablero 1: 8 circuitos (Breakers 20A)..."></textarea>
                   </div>
 
                   <div className="toggles-grid">
-                    <div className={`custom-toggle-card ${formData.circuitsCondition ? 'active' : ''}`} onClick={() => toggleCheck('circuitsCondition')}>
+                    <div 
+                      className={`custom-toggle-card ${formData.circuitsCondition === true ? 'active' : formData.circuitsCondition === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('circuitsCondition')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Circuitos Internos Aprobados</span>
+                      <span className="toggle-label">
+                        Breakers / Circuitos: <strong>{renderBoolVal(formData.circuitsCondition, 'Buen Estado', 'Deficiente')}</strong>
+                      </span>
                     </div>
-                    <div className={`custom-toggle-card ${formData.conduitsCondition ? 'active' : ''}`} onClick={() => toggleCheck('conduitsCondition')}>
+
+                    <div 
+                      className={`custom-toggle-card ${formData.conduitsCondition === true ? 'active' : formData.conduitsCondition === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('conduitsCondition')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Canalizaciones en Buen Estado</span>
+                      <span className="toggle-label">
+                        Canalizaciones: <strong>{renderBoolVal(formData.conduitsCondition, 'Óptimas', 'Deficientes')}</strong>
+                      </span>
                     </div>
-                    <div className={`custom-toggle-card ${formData.conductorsCondition ? 'active' : ''}`} onClick={() => toggleCheck('conductorsCondition')}>
+
+                    <div 
+                      className={`custom-toggle-card ${formData.conductorsCondition === true ? 'active' : formData.conductorsCondition === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('conductorsCondition')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Conductores Eléctricos Aprobados</span>
+                      <span className="toggle-label">
+                        Cableado Interno: <strong>{renderBoolVal(formData.conductorsCondition, 'Adecuado', 'Deteriorado')}</strong>
+                      </span>
                     </div>
-                    <div className={`custom-toggle-card ${formData.outletsCondition ? 'active' : ''}`} onClick={() => toggleCheck('outletsCondition')}>
+
+                    <div 
+                      className={`custom-toggle-card ${formData.outletsCondition === true ? 'active' : formData.outletsCondition === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('outletsCondition')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Tomas Corrientes en Buen Estado</span>
+                      <span className="toggle-label">
+                        Tomacorrientes: <strong>{renderBoolVal(formData.outletsCondition, 'Operativos', 'Deficientes')}</strong>
+                      </span>
                     </div>
                   </div>
 
@@ -509,6 +620,7 @@ function App() {
                     <div className="form-group">
                       <label>Tipo de Paredes</label>
                       <select name="wallType" value={formData.wallType} onChange={handleChange}>
+                        <option value="">-- Seleccionar --</option>
                         <option value="Vaciada">Concreto Vaciado</option>
                         <option value="Bloque de cámara">Bloque de Cámara (Cemento)</option>
                         <option value="Bloque de arcilla">Bloque de Arcilla</option>
@@ -522,28 +634,45 @@ function App() {
                   </div>
 
                   <div className="toggles-grid">
-                    <div className={`custom-toggle-card ${formData.hasFriso ? 'active' : ''}`} onClick={() => toggleCheck('hasFriso')}>
+                    <div 
+                      className={`custom-toggle-card ${formData.hasFriso === true ? 'active' : formData.hasFriso === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('hasFriso')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Paredes con Friso</span>
+                      <span className="toggle-label">
+                        Frisado en Paredes: <strong>{renderBoolVal(formData.hasFriso, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
-                    <div className={`custom-toggle-card ${formData.spaceForGenerator ? 'active' : ''}`} onClick={() => toggleCheck('spaceForGenerator')}>
+
+                    <div 
+                      className={`custom-toggle-card ${formData.spaceForGenerator === true ? 'active' : formData.spaceForGenerator === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('spaceForGenerator')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Área para Planta Eléctrica</span>
+                      <span className="toggle-label">
+                        Área Planta Eléctrica: <strong>{renderBoolVal(formData.spaceForGenerator, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
-                    <div className={`custom-toggle-card ${formData.spaceForSolar ? 'active' : ''}`} onClick={() => toggleCheck('spaceForSolar')}>
+
+                    <div 
+                      className={`custom-toggle-card ${formData.spaceForSolar === true ? 'active' : formData.spaceForSolar === false ? 'inactive-no' : ''}`} 
+                      onClick={() => toggleCheck('spaceForSolar')}
+                    >
                       <div className="toggle-switch"><div className="toggle-slider"></div></div>
-                      <span className="toggle-label">Área Techo Paneles Solares</span>
+                      <span className="toggle-label">
+                        Área Paneles Solares: <strong>{renderBoolVal(formData.spaceForSolar, 'SÍ', 'NO')}</strong>
+                      </span>
                     </div>
                   </div>
 
-                  {formData.spaceForGenerator && (
+                  {formData.spaceForGenerator === true && (
                     <div className="form-group" style={{marginTop: '1rem'}}>
                       <label>Detalles del Área de Planta Eléctrica</label>
                       <input type="text" name="generatorNotes" value={formData.generatorNotes} onChange={handleChange} placeholder="Ej: Patio posterior libre (12m²) con ventilación..." />
                     </div>
                   )}
 
-                  {formData.spaceForSolar && (
+                  {formData.spaceForSolar === true && (
                     <div className="form-group" style={{marginTop: '1rem'}}>
                       <label>Detalles del Área de Paneles Solares</label>
                       <input type="text" name="solarNotes" value={formData.solarNotes} onChange={handleChange} placeholder="Ej: Techo libre despejado (45m²) orientación Sur..." />
@@ -736,7 +865,7 @@ function App() {
               <div className="report-header">
                 <img src="/airtek-logo.png" alt="Airtek" className="report-logo" />
                 <div className="report-title-block">
-                  <h2>CORPORACION MATRIX TV, C.A.</h2>
+                  <h2>CORPORACIÓN MATRIX TV, C.A.</h2>
                   <h3>GERENCIA OPERATIVA DE ENERGÍA</h3>
                   <h4>FICHA TÉCNICA OFICIAL DE INSPECCIÓN Y RESPALDOS</h4>
                 </div>
@@ -745,12 +874,12 @@ function App() {
 
               {/* 1. DATOS DEL NODO */}
               <div className="report-section">
-                <h4 className="rep-sec-title">1. DATOS DEL NODO Y UBICACIÓN</h4>
+                <h4 className="rep-sec-title">1. DATOS GENERALES DEL NODO Y UBICACIÓN</h4>
                 <div className="rep-grid-2">
-                  <p><strong>Título / Propuesta:</strong> {formData.proposalTitle || 'N/A'}</p>
+                  <p><strong>Título Propuesta:</strong> {formData.proposalTitle || 'N/A'}</p>
                   <p><strong>Identificador del Nodo:</strong> {formData.nodeId || 'N/A'}</p>
                   <p><strong>Inspector Responsable:</strong> {formData.inspectorName || 'N/A'}</p>
-                  <p><strong>Fecha de Inspección:</strong> {formData.date}</p>
+                  <p><strong>Fecha de Inspección:</strong> {formData.date || 'N/A'}</p>
                   <p><strong>Enlace Google Maps / Coordenadas:</strong> {formData.mapsUrl ? <a href={formData.mapsUrl} target="_blank" rel="noreferrer" style={{color: '#0166FF'}}>{formData.mapsUrl}</a> : 'N/A'}</p>
                 </div>
                 <p style={{marginTop: '0.5rem'}}><strong>Dirección Completa:</strong> {formData.address || 'N/A'}</p>
@@ -761,10 +890,10 @@ function App() {
                 <h4 className="rep-sec-title">2. SERVICIO ELÉCTRICO Y ACOMETIDA</h4>
                 <div className="rep-grid-2">
                   <p><strong>Estatus del Servicio:</strong> <span className={`badge ${formData.serviceStatus}`}>{formData.serviceStatus ? formData.serviceStatus.toUpperCase() : 'N/A'}</span></p>
-                  <p><strong>Medidor Eléctrico:</strong> {formData.hasMeter ? 'Sí Presente' : 'No Presente / Conexión Directa'}</p>
+                  <p><strong>Medidor Eléctrico:</strong> {renderBoolVal(formData.hasMeter, 'Sí Presente', 'No Presente / Conexión Directa')}</p>
                   <p><strong>Condición de Acometida:</strong> {formData.acometidaCondition || 'N/A'}</p>
                   <p><strong>Calibre de Conductor:</strong> {formData.wireGauge || 'N/A'}</p>
-                  <p><strong>Acometida Dedicada Requerida:</strong> {formData.dualCircuitNeeded ? 'SÍ (Requerida)' : 'NO (Suficiente)'}</p>
+                  <p><strong>Acometida Dedicada Requerida:</strong> {renderBoolVal(formData.dualCircuitNeeded, 'SÍ (Requerida)', 'NO (Suficiente)')}</p>
                   <p><strong>Cortes / Racionamiento Promedio:</strong> {formData.loadShedding || 'N/A'}</p>
                 </div>
               </div>
@@ -779,11 +908,11 @@ function App() {
                   <p><strong>Voltaje Medido / Nominal:</strong> {formData.transformerVoltage ? `${formData.transformerVoltage} V` : 'N/A'}</p>
                   <p><strong>Tipo de Fase:</strong> {formData.phaseType || 'N/A'}</p>
                   <p><strong>Distancia Aproximada al Nodo:</strong> {formData.transformerDistance ? `${formData.transformerDistance} mts` : 'N/A'}</p>
-                  <p><strong>Transformador Compartido:</strong> {formData.isShared ? 'SÍ' : 'NO'}</p>
-                  <p><strong>Cantidad de Suscriptores:</strong> {formData.subscriberCount || 'N/A'}</p>
+                  <p><strong>Transformador Compartido:</strong> {renderBoolVal(formData.isShared)}</p>
+                  <p><strong>Cantidad de Suscriptores:</strong> {formData.isShared === true ? (formData.subscriberCount || 'N/A') : 'N/A'}</p>
                   <p><strong>Código UBT:</strong> {formData.ubt || 'N/A'}</p>
-                  <p><strong>Protección Pararrayos:</strong> {formData.hasLightningRod ? 'Sí Presente' : 'No Presente'}</p>
-                  <p><strong>Protección Antifraude:</strong> {formData.hasAntiFraud ? 'Sí Presente' : 'No Presente'}</p>
+                  <p><strong>Protección Pararrayos:</strong> {renderBoolVal(formData.hasLightningRod, 'Sí Presente', 'No Presente')}</p>
+                  <p><strong>Protección Antifraude:</strong> {renderBoolVal(formData.hasAntiFraud, 'Sí Presente', 'No Presente')}</p>
                 </div>
                 {formData.transformerNotes && (
                   <p style={{marginTop: '0.5rem'}}><strong>Observaciones del Transformador:</strong> {formData.transformerNotes}</p>
@@ -794,29 +923,29 @@ function App() {
               <div className="report-section">
                 <h4 className="rep-sec-title">4. TABLEROS E INFRAESTRUCTURA ELÉCTRICA INTERNA</h4>
                 <div className="rep-grid-2">
-                  <p><strong>Cantidad de Tableros:</strong> {formData.panelCount || '0'}</p>
-                  <p><strong>Total de Breakers / Circuitos:</strong> {formData.totalCircuits || '0'}</p>
+                  <p><strong>Cantidad de Tableros:</strong> {formData.panelCount || 'N/A'}</p>
+                  <p><strong>Total de Breakers / Circuitos:</strong> {formData.totalCircuits || 'N/A'}</p>
                   <p><strong>Tipos de Tableros:</strong> {formData.panelTypes || 'N/A'}</p>
                   <p><strong>Condición Tablero Principal:</strong> {formData.mainPanelCondition || 'N/A'}</p>
                   <p><strong>Desglose por Tablero:</strong> {formData.circuitsPerPanel || 'N/A'}</p>
-                  <p><strong>Estado Breakers / Circuitos:</strong> {formData.circuitsCondition ? 'Deficiente / Reemplazar' : 'Buen Estado / Operativo'}</p>
-                  <p><strong>Tuberías y Canalizaciones:</strong> {formData.conduitsCondition ? 'Expuestas / Deficientes' : 'Óptimas / Adecuadas'}</p>
-                  <p><strong>Cableado / Conductores:</strong> {formData.conductorsCondition ? 'Deteriorado / Sobrecalentado' : 'Adecuado / Buen Estado'}</p>
-                  <p><strong>Tomacorrientes Generales:</strong> {formData.outletsCondition ? 'Deficientes / Sin Tierra' : 'Operativos'}</p>
-                  <p><strong>Tomas 110V Disponibles:</strong> {formData.outlets110Count || '0'}</p>
-                  <p><strong>Tomas 220V Disponibles:</strong> {formData.outlets220Count || '0'}</p>
+                  <p><strong>Estado Breakers / Circuitos:</strong> {renderBoolVal(formData.circuitsCondition, 'Buen Estado / Operativo', 'Deficiente / Reemplazar')}</p>
+                  <p><strong>Tuberías y Canalizaciones:</strong> {renderBoolVal(formData.conduitsCondition, 'Óptimas / Adecuadas', 'Expuestas / Deficientes')}</p>
+                  <p><strong>Cableado / Conductores:</strong> {renderBoolVal(formData.conductorsCondition, 'Adecuado / Buen Estado', 'Deteriorado / Sobrecalentado')}</p>
+                  <p><strong>Tomacorrientes Generales:</strong> {renderBoolVal(formData.outletsCondition, 'Operativos', 'Deficientes / Sin Tierra')}</p>
+                  <p><strong>Tomas 110V Disponibles:</strong> {formData.outlets110Count || 'N/A'}</p>
+                  <p><strong>Tomas 220V Disponibles:</strong> {formData.outlets220Count || 'N/A'}</p>
                 </div>
               </div>
 
               {/* 5. ESTRUCTURA Y RESPALDO */}
               <div className="report-section">
-                <h4 className="rep-sec-title">5. ESTRUCTURA DEL INMUEBLE Y RESPALDO REQUERIDO</h4>
+                <h4 className="rep-sec-title">5. ESTRUCTURA DEL INMUEBLE Y ESPACIO DE RESPALDO</h4>
                 <div className="rep-grid-2">
                   <p><strong>Tipo de Paredes / Estructura:</strong> {formData.wallType || 'N/A'}</p>
-                  <p><strong>Frisado en Paredes:</strong> {formData.hasFriso ? 'SÍ (Frisadas)' : 'NO (Obra Limpia)'}</p>
+                  <p><strong>Frisado en Paredes:</strong> {renderBoolVal(formData.hasFriso, 'SÍ (Frisadas)', 'NO (Obra Limpia)')}</p>
                   <p><strong>Tipo de Techo / Cubierta:</strong> {formData.roofType || 'N/A'}</p>
-                  <p><strong>Espacio para Planta Eléctrica:</strong> {formData.spaceForGenerator ? 'SÍ (Disponible)' : 'NO (Sin Espacio)'}</p>
-                  <p><strong>Espacio para Paneles Solares:</strong> {formData.spaceForSolar ? 'SÍ (Disponible en Techo)' : 'NO (Sin Espacio Techo)'}</p>
+                  <p><strong>Espacio para Planta Eléctrica:</strong> {renderBoolVal(formData.spaceForGenerator, 'SÍ (Disponible)', 'NO (Sin Espacio)')}</p>
+                  <p><strong>Espacio para Paneles Solares:</strong> {renderBoolVal(formData.spaceForSolar, 'SÍ (Disponible en Techo)', 'NO (Sin Espacio Techo)')}</p>
                 </div>
                 {formData.generatorNotes && <p style={{marginTop: '0.4rem'}}><strong>Detalles Planta Eléctrica:</strong> {formData.generatorNotes}</p>}
                 {formData.solarNotes && <p style={{marginTop: '0.4rem'}}><strong>Detalles Paneles Solares:</strong> {formData.solarNotes}</p>}
@@ -825,9 +954,9 @@ function App() {
 
               {/* 6. DICTAMEN FINAL */}
               <div className="report-section final-eval">
-                <h4 className="rep-sec-title">6. DICTAMEN TÉCNICO FINAL DE EVALUACIÓN</h4>
-                <div className={`final-badge-box ${formData.finalStatus === 'APTO' ? 'apto' : formData.finalStatus === 'NO APTO' ? 'no-apto' : 'adecuaciones'}`}>
-                  DICTAMEN TÉCNICO: {formData.finalStatus}
+                <h4 className="rep-sec-title">6. DICTAMEN TÉCNICO DE EVALUACIÓN FINAL</h4>
+                <div className={`final-badge-box ${formData.finalStatus === 'APTO' ? 'apto' : formData.finalStatus === 'NO APTO' ? 'no-apto' : formData.finalStatus === 'APTO CON ADECUACIONES' ? 'adecuaciones' : 'pendiente'}`}>
+                  DICTAMEN TÉCNICO: {formData.finalStatus || 'PENDIENTE DE EVALUACIÓN'}
                 </div>
               </div>
 
@@ -871,7 +1000,7 @@ function App() {
           <div className="print-head-flex">
             <img src="/airtek-logo.png" alt="Airtek Logo" className="print-logo-img" />
             <div className="print-head-titles">
-              <h2>CORPORACION MATRIX TV, C.A.</h2>
+              <h2>CORPORACIÓN MATRIX TV, C.A.</h2>
               <h3>GERENCIA OPERATIVA DE ENERGÍA</h3>
               <h4>FICHA OFICIAL DE INSPECCIÓN TÉCNICA DE RESPALDOS</h4>
             </div>
@@ -896,7 +1025,7 @@ function App() {
               </tr>
               <tr>
                 <td className="label-col">Inspector Responsable:</td><td>{formData.inspectorName || 'N/A'}</td>
-                <td className="label-col">Fecha Inspección:</td><td>{formData.date}</td>
+                <td className="label-col">Fecha Inspección:</td><td>{formData.date || 'N/A'}</td>
               </tr>
               <tr>
                 <td className="label-col">Coordenadas / Maps:</td><td colSpan="3" style={{ wordBreak: 'break-all' }}>{formData.mapsUrl || 'N/A'}</td>
@@ -909,14 +1038,14 @@ function App() {
               <tr><th colSpan="4" className="print-th">2. SERVICIO ELÉCTRICO Y ACOMETIDA</th></tr>
               <tr>
                 <td className="label-col">Estatus Servicio:</td><td>{formData.serviceStatus ? formData.serviceStatus.toUpperCase() : 'N/A'}</td>
-                <td className="label-col">Medidor Eléctrico:</td><td>{formData.hasMeter ? 'SÍ' : 'NO'}</td>
+                <td className="label-col">Medidor Eléctrico:</td><td>{renderBoolVal(formData.hasMeter)}</td>
               </tr>
               <tr>
                 <td className="label-col">Condición Acometida:</td><td>{formData.acometidaCondition || 'N/A'}</td>
                 <td className="label-col">Calibre Conductor:</td><td>{formData.wireGauge || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="label-col">Acometida Requerida:</td><td>{formData.dualCircuitNeeded ? 'SÍ (Dedicada)' : 'NO (Suficiente)'}</td>
+                <td className="label-col">Acometida Requerida:</td><td>{renderBoolVal(formData.dualCircuitNeeded, 'SÍ (Dedicada)', 'NO (Suficiente)')}</td>
                 <td className="label-col">Cortes Promedio:</td><td>{formData.loadShedding || 'N/A'}</td>
               </tr>
 
@@ -935,12 +1064,17 @@ function App() {
                 <td className="label-col">Distancia al Nodo:</td><td>{formData.transformerDistance ? `${formData.transformerDistance} mts` : 'N/A'}</td>
               </tr>
               <tr>
-                <td className="label-col">Compartido:</td><td>{formData.isShared ? 'SÍ' : 'NO'}</td>
-                <td className="label-col">Suscriptores:</td><td>{formData.subscriberCount || 'N/A'}</td>
+                <td className="label-col">Compartido:</td><td>{renderBoolVal(formData.isShared)}</td>
+                <td className="label-col">Suscriptores:</td><td>{formData.isShared === true ? (formData.subscriberCount || 'N/A') : 'N/A'}</td>
               </tr>
               <tr>
                 <td className="label-col">Código UBT:</td><td>{formData.ubt || 'N/A'}</td>
-                <td className="label-col">Protecciones:</td><td>{formData.hasLightningRod ? 'Pararrayos (SÍ)' : 'Sin Pararrayos'} / {formData.hasAntiFraud ? 'Antifraude (SÍ)' : 'Sin Antifraude'}</td>
+                <td className="label-col">Protecciones:</td>
+                <td>
+                  {(formData.hasLightningRod === null && formData.hasAntiFraud === null) 
+                    ? 'N/A' 
+                    : `${formData.hasLightningRod === true ? 'Pararrayos (SÍ)' : formData.hasLightningRod === false ? 'Sin Pararrayos' : 'Pararrayos (N/A)'} / ${formData.hasAntiFraud === true ? 'Antifraude (SÍ)' : formData.hasAntiFraud === false ? 'Sin Antifraude' : 'Antifraude (N/A)'}`}
+                </td>
               </tr>
               {formData.transformerNotes && (
                 <tr>
@@ -951,8 +1085,8 @@ function App() {
               {/* 4. TABLEROS E INFRAESTRUCTURA */}
               <tr><th colSpan="4" className="print-th">4. TABLEROS E INFRAESTRUCTURA ELÉCTRICA INTERNA</th></tr>
               <tr>
-                <td className="label-col">Cantidad Tableros:</td><td>{formData.panelCount || '0'}</td>
-                <td className="label-col">Total Circuitos/Breakers:</td><td>{formData.totalCircuits || '0'}</td>
+                <td className="label-col">Cantidad Tableros:</td><td>{formData.panelCount || 'N/A'}</td>
+                <td className="label-col">Total Circuitos/Breakers:</td><td>{formData.totalCircuits || 'N/A'}</td>
               </tr>
               <tr>
                 <td className="label-col">Tipos de Tableros:</td><td>{formData.panelTypes || 'N/A'}</td>
@@ -962,33 +1096,33 @@ function App() {
                 <td className="label-col">Desglose por Tablero:</td><td colSpan="3">{formData.circuitsPerPanel || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="label-col">Breakers / Circuitos:</td><td>{formData.circuitsCondition ? 'Deficiente' : 'Buen Estado'}</td>
-                <td className="label-col">Tuberías/Canalizaciones:</td><td>{formData.conduitsCondition ? 'Expuestas/Deficientes' : 'Óptimas'}</td>
+                <td className="label-col">Breakers / Circuitos:</td><td>{renderBoolVal(formData.circuitsCondition, 'Buen Estado', 'Deficiente')}</td>
+                <td className="label-col">Tuberías/Canalizaciones:</td><td>{renderBoolVal(formData.conduitsCondition, 'Óptimas', 'Expuestas/Deficientes')}</td>
               </tr>
               <tr>
-                <td className="label-col">Cableado Interno:</td><td>{formData.conductorsCondition ? 'Deteriorado' : 'Adecuado'}</td>
-                <td className="label-col">Tomacorrientes:</td><td>{formData.outletsCondition ? 'Deficiente/Sin Tierra' : 'Operativos'}</td>
+                <td className="label-col">Cableado Interno:</td><td>{renderBoolVal(formData.conductorsCondition, 'Adecuado', 'Deteriorado')}</td>
+                <td className="label-col">Tomacorrientes:</td><td>{renderBoolVal(formData.outletsCondition, 'Operativos', 'Deficiente/Sin Tierra')}</td>
               </tr>
               <tr>
-                <td className="label-col">Tomas 110V Disponibles:</td><td>{formData.outlets110Count || '0'}</td>
-                <td className="label-col">Tomas 220V Disponibles:</td><td>{formData.outlets220Count || '0'}</td>
+                <td className="label-col">Tomas 110V Disponibles:</td><td>{formData.outlets110Count || 'N/A'}</td>
+                <td className="label-col">Tomas 220V Disponibles:</td><td>{formData.outlets220Count || 'N/A'}</td>
               </tr>
 
               {/* 5. ESTRUCTURA Y RESPALDO */}
               <tr><th colSpan="4" className="print-th">5. ESTRUCTURA DEL INMUEBLE Y ESPACIO DE RESPALDO</th></tr>
               <tr>
                 <td className="label-col">Tipo Paredes:</td><td>{formData.wallType || 'N/A'}</td>
-                <td className="label-col">Frisado:</td><td>{formData.hasFriso ? 'SÍ (Frisadas)' : 'NO (Obra Limpia)'}</td>
+                <td className="label-col">Frisado:</td><td>{renderBoolVal(formData.hasFriso, 'SÍ (Frisadas)', 'NO (Obra Limpia)')}</td>
               </tr>
               <tr>
                 <td className="label-col">Tipo Techo:</td><td colSpan="3">{formData.roofType || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="label-col">Espacio Planta Eléctrica:</td><td>{formData.spaceForGenerator ? 'SÍ (Disponible)' : 'NO (Sin Espacio)'}</td>
+                <td className="label-col">Espacio Planta Eléctrica:</td><td>{renderBoolVal(formData.spaceForGenerator, 'SÍ (Disponible)', 'NO (Sin Espacio)')}</td>
                 <td className="label-col">Detalles Planta:</td><td>{formData.generatorNotes || 'N/A'}</td>
               </tr>
               <tr>
-                <td className="label-col">Espacio Paneles Solares:</td><td>{formData.spaceForSolar ? 'SÍ (Disponible en Techo)' : 'NO (Sin Espacio Techo)'}</td>
+                <td className="label-col">Espacio Paneles Solares:</td><td>{renderBoolVal(formData.spaceForSolar, 'SÍ (Disponible en Techo)', 'NO (Sin Espacio Techo)')}</td>
                 <td className="label-col">Detalles Solares:</td><td>{formData.solarNotes || 'N/A'}</td>
               </tr>
               {formData.housingNotes && (
@@ -1001,8 +1135,8 @@ function App() {
               <tr><th colSpan="4" className="print-th">6. DICTAMEN TÉCNICO DE EVALUACIÓN FINAL</th></tr>
               <tr>
                 <td colSpan="4" className="print-dictamen-cell">
-                  <div className={`print-dictamen-badge ${formData.finalStatus === 'APTO' ? 'apto' : formData.finalStatus === 'NO APTO' ? 'no-apto' : 'adecuaciones'}`}>
-                    DICTAMEN TÉCNICO: {formData.finalStatus}
+                  <div className={`print-dictamen-badge ${formData.finalStatus === 'APTO' ? 'apto' : formData.finalStatus === 'NO APTO' ? 'no-apto' : formData.finalStatus === 'APTO CON ADECUACIONES' ? 'adecuaciones' : 'pendiente'}`}>
+                    DICTAMEN TÉCNICO: {formData.finalStatus || 'PENDIENTE DE EVALUACIÓN'}
                   </div>
                 </td>
               </tr>
@@ -1016,7 +1150,7 @@ function App() {
                 <img src="/airtek-logo.png" alt="Airtek" className="print-logo-img" />
                 <div className="print-head-titles">
                   <h2>ANEXOS FOTOGRÁFICOS DE EVIDENCIA TÉCNICA</h2>
-                  <h4>GERENCIA OPERATIVA DE ENERGÍA</h4>
+                  <h4>CORPORACIÓN MATRIX TV, C.A. - GERENCIA OPERATIVA DE ENERGÍA</h4>
                 </div>
               </div>
               <hr className="print-divider" />
